@@ -1,5 +1,10 @@
 package ru.track;
 
+import com.mashape.unirest.http.JsonNode;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.HttpResponse;
+
+
 /**
  * TASK:
  * POST request to  https://guarded-mesa-31536.herokuapp.com/track
@@ -9,6 +14,7 @@ package ru.track;
  *
  *
  */
+
 public class App {
 
     public static final String URL = "http://guarded-mesa-31536.herokuapp.com/track";
@@ -17,15 +23,14 @@ public class App {
     public static final String FIELD_EMAIL = "email";
 
     public static void main(String[] args) throws Exception {
-       // 1) Use Unirest.post()
-        // 2) Get response .asJson()
-        // 3) Get json body and JsonObject
-        // 4) Get field "success" from JsonObject
 
+        HttpResponse<JsonNode> response = Unirest.post(URL)
+                .field(FIELD_NAME, "Max")
+                .field(FIELD_GITHUB, "Highoc")
+                .field(FIELD_EMAIL, "door0172@gmail.com")
+                .asJson();
 
-
-
-        boolean success = false;
+        System.out.println(response.getBody().getObject().get("success"));
     }
 
 }
