@@ -1,6 +1,8 @@
 package ru.track;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 
 
 /**
@@ -32,6 +34,9 @@ public class CountWords {
         this.skipWord = skipWord;
     }
 
+//    public static void main(String[] args) throws Exception {
+//       countNumbers(new File("L2-objects/words.txt"));
+//    }
     /**
      * Метод на вход принимает объект File, изначально сумма = 0
      * Нужно пройти по всем строкам файла, и если в строке стоит целое число,
@@ -40,7 +45,20 @@ public class CountWords {
      * @return - целое число - сумма всех чисел из файла
      */
     public long countNumbers(File file) throws Exception {
-        return 0;
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+
+        long result = 0;
+        String nowLine = "";
+
+        while ((nowLine = bufferedReader.readLine()) != null) {
+
+            try {
+                result += Integer.parseInt(nowLine);
+            }
+            catch (NumberFormatException e) {}
+        }
+
+        return result;
     }
 
 
@@ -52,7 +70,25 @@ public class CountWords {
      * @return - результирующая строка
      */
     public String concatWords(File file) throws Exception {
-        return null;
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+
+        String nowLine = "";
+        StringBuilder stringBuilder = new StringBuilder();
+
+        while ((nowLine = bufferedReader.readLine()) != null) {
+
+            try {
+                Integer.parseInt(nowLine);
+            }
+            catch (NumberFormatException e) {
+                if (!skipWord.equals(nowLine)) {
+                    stringBuilder.append(nowLine);
+                    stringBuilder.append(' ');
+                }
+            }
+        }
+
+        return stringBuilder.toString();
     }
 
 }
