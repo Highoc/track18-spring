@@ -6,7 +6,10 @@ import java.util.NoSuchElementException;
  * Должен наследовать List
  * Односвязный список
  */
-public class MyLinkedList extends List {
+public class MyLinkedList extends List implements Stack, Queue  {
+
+    private Node dataHead;
+    private Node dataTail;
 
     /**
      * private - используется для сокрытия этого класса от других.
@@ -27,21 +30,87 @@ public class MyLinkedList extends List {
     }
 
     @Override
-    void add(int item) {
+    public void add(int item) {
+        if (dataHead == null) {
+            dataTail = dataHead = new Node(null, null, item);
+        }
+        else {
+            dataTail.next = new Node(dataTail, null, item);
+            dataTail = dataTail.next;
+        }
+        countNode++;
     }
 
     @Override
-    int remove(int idx) throws NoSuchElementException {
-        return 0;
+    public int remove(int idx) throws NoSuchElementException {
+        if ((idx < 0) || (idx >= countNode)){
+            throw new NoSuchElementException();
+        }
+
+        Node tempNode = null;
+        if (idx == countNode - 1){
+            tempNode = dataTail;
+            idx = 0;
+        } else {
+            tempNode = dataHead;
+        }
+
+        while(idx != 0)
+        {
+            tempNode = tempNode.next;
+            idx--;
+        }
+
+        if (tempNode.prev != null) {
+            tempNode.prev.next = tempNode.next;
+        } else {
+            dataHead = tempNode.next;
+        }
+
+        if (tempNode.next != null) {
+            tempNode.next.prev = tempNode.prev;
+        } else {
+            dataTail = tempNode.prev;
+        }
+        countNode--;
+
+        return tempNode.val;
     }
 
     @Override
-    int get(int idx) throws NoSuchElementException {
-        return 0;
+    public int get(int idx) throws NoSuchElementException {
+        if ((idx < 0) || (idx >= countNode)){
+            throw new NoSuchElementException();
+        }
+
+        Node tempNode = dataHead;
+        while(idx != 0)
+        {
+            tempNode = tempNode.next;
+            idx--;
+        }
+
+        return tempNode.val;
+    }
+
+
+    @Override
+    public void push(int value){
+        add(value);
     }
 
     @Override
-    int size() {
-        return 0;
+    public int pop(){
+        return remove(countNode - 1);
+    }
+
+    @Override
+    public void enqueue(int value) {
+        add(value);
+    }
+
+    @Override
+    public int dequeu() {
+        return remove(0);
     }
 }

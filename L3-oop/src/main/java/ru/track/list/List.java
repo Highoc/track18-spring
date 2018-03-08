@@ -11,6 +11,7 @@ import java.util.NoSuchElementException;
  */
 public abstract class List {
 
+    protected int countNode;
     /**
      * Добавить элемент в конец списка
      */
@@ -35,7 +36,5 @@ public abstract class List {
     /**
      * Кол-во элементов списка
      */
-    abstract int size();
-
-
+    int size(){ return countNode; }
 }
