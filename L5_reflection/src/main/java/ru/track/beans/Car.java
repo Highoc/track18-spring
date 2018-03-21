@@ -2,10 +2,10 @@ package ru.track.beans;
 
 import java.io.Serializable;
 import java.util.Objects;
-
 /**
  *
  */
+
 public class Car implements Serializable {
 
 

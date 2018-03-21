@@ -3,11 +3,15 @@ package ru.track.json;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.openjdk.jmh.generators.core.SourceThrowableError;
+
+import javax.sound.midi.Soundbank;
 
 
 /**
@@ -60,9 +64,18 @@ public class JsonWriter {
     @NotNull
     private static String toJsonArray(@NotNull Object object) {
         int length = Array.getLength(object);
-        // TODO: implement!
 
-        return null;
+        StringBuilder stringBuilder = new StringBuilder("[");
+        for (int i = 0; i < length; i++) {
+            stringBuilder.append(toJson(Array.get(object, i)));
+
+            if (i != length - 1){
+                stringBuilder.append(",");
+            }
+        }
+        stringBuilder.append("]");
+
+        return stringBuilder.toString();
     }
 
     /**
@@ -82,11 +95,14 @@ public class JsonWriter {
      */
     @NotNull
     private static String toJsonMap(@NotNull Object object) {
-        // TODO: implement!
+        Map<Object, Object> map = (Map) object;
+        Map<String, String> stringMap = new LinkedHashMap<>();
 
-        return null;
-        // Можно воспользоваться этим методом, если сохранить все поля в новой мапе уже в строковом представлении
-//        return formatObject(stringMap);
+        for (Map.Entry<Object, Object> pair : map.entrySet()) {
+            stringMap.put(pair.getKey().toString(), toJson(pair.getValue()));
+        }
+
+        return formatObject(stringMap);
     }
 
     /**
@@ -108,10 +124,24 @@ public class JsonWriter {
     @NotNull
     private static String toJsonObject(@NotNull Object object) {
         Class clazz = object.getClass();
-        // TODO: implement!
 
+        Map<String, String> stringMap = new LinkedHashMap<>();
+        for (Field field: clazz.getDeclaredFields()) {
+            if (!field.isAccessible()) {
+                field.setAccessible(true);
+            }
 
-        return null;
+            try {
+                Object value = field.get(object);
+
+                if (value != null) {
+                    stringMap.put(field.getName(), toJson(value));
+                }
+
+            } catch (IllegalAccessException e) {}
+        }
+
+        return formatObject(stringMap);
     }
 
     /**
