@@ -134,8 +134,12 @@ public class JsonWriter {
             try {
                 Object value = field.get(object);
 
-                if (value != null) {
-                    stringMap.put(field.getName(), toJson(value));
+                if (value != null || clazz.getAnnotation(JsonNullable.class) != null) {
+                    if (field.getAnnotation(SerializedTo.class) != null) {
+                        stringMap.put(field.getAnnotation(SerializedTo.class).value(), toJson(value));
+                    } else {
+                        stringMap.put(field.getName(), toJson(value));
+                    }
                 }
 
             } catch (IllegalAccessException e) {}
@@ -159,5 +163,4 @@ public class JsonWriter {
 
         return String.format("{%s}", r);
     }
-
 }

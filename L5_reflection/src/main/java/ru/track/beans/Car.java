@@ -8,8 +8,6 @@ import java.util.Objects;
 
 public class Car implements Serializable {
 
-
-
     private long id;
     private String model;
 
