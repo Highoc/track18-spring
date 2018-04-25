@@ -15,27 +15,18 @@ import java.util.*;
 
 
 public class Server {
-
     private final int port;
     private final int backlog;
 
-    //private Map<Integer, Client> clients = new HashMap<>();
-    private List<Thread> clientThreads = new ArrayList<>();
-    private static int counterID = 0;
-
-    class Client {
-        private int clientID;
-        private Socket socket;
-
-        private Thread reader;
-        private Thread writer;
-
-        private Queue<Message> messageQueue;
-    }
+    private List<Message> messages = Collections.synchronizedList(new ArrayList<>());
+    private List<ClientThread> clients = new ArrayList<>();
+    private Thread broadcaster = new Thread(() -> { broadcast(); });;
 
     public Server(int port, int backlog) {
         this.port = port;
         this.backlog = backlog;
+
+        broadcaster.start();
     }
 
     public void serve() throws IOException {
@@ -55,16 +46,43 @@ public class Server {
     }
 
     private void handle(@NotNull ServerSocket serverSocket) {
-        Socket socket = null;
         try {
-            socket = serverSocket.accept();
+            Socket socket = serverSocket.accept();
 
-            Thread thread = new HandlerThread(socket);
-            clientThreads.add(thread);
-            System.out.println(String.format("main > new client connected: %s", thread.getName()));
-            thread.start();
+            ClientThread client = new ClientThread(socket, messages);
+            clients.add(client);
+            client.start();
 
+            System.out.println(String.format("main > new client connected: %s", client.getName()));
         } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void broadcast()
+    {
+        try {
+            Date date = new Date();
+            long lastUpdateTime = date.getTime();
+
+            while (true) {
+                synchronized (messages) {
+                    for (Message messsage: messages) {
+                        if (messsage.getTimeStand() > lastUpdateTime)
+                        {
+                            for (ClientThread client: clients) {
+                                if (!client.getName().equals(messsage.getSenderName()))
+                                {
+                                    client.send(messsage);
+                                }
+                            }
+                        }
+                    }
+                    lastUpdateTime = date.getTime();
+                }
+                Thread.sleep(2000);
+            }
+        } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }

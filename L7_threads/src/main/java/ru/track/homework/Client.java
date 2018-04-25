@@ -22,16 +22,12 @@ public class Client {
     public Client(@NotNull String host, int port) {
         this.port = port;
         this.host = host;
-
-        writer = null;
-        reader = null;
     }
 
     private void connect()
     {
-        Socket socket = null;
         try {
-            socket = new Socket(host, port);
+            Socket socket = new Socket(host, port);
             final Socket finalSocket = socket;
 
             writer = new Thread(() -> { System.out.println("writer > started"); writeToSocket(finalSocket); });
@@ -64,8 +60,8 @@ public class Client {
         } finally {
             IOUtils.closeQuietly(socket);
         }
-
     }
+
     private void writeToSocket(@NotNull Socket socket) {
         try{
             final OutputStream out = socket.getOutputStream();
