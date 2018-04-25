@@ -16,5 +16,6 @@ class Message {
 
     public String getData() { return data; }
     public String getSenderName() { return senderName; }
+    public void setSenderName(@NotNull String senderName) { this.senderName = senderName; }
     public long getTimeStand() { return ts; }
 }

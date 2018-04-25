@@ -1,14 +1,14 @@
 package ru.track.homework;
 
+import com.google.gson.Gson;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.Date;
 import java.util.Scanner;
 
 public class Client {
@@ -18,6 +18,8 @@ public class Client {
 
     private Thread writer;
     private Thread reader;
+
+    private static Gson gson = new Gson();
 
     public Client(@NotNull String host, int port) {
         this.port = port;
@@ -30,11 +32,11 @@ public class Client {
             Socket socket = new Socket(host, port);
             final Socket finalSocket = socket;
 
-            writer = new Thread(() -> { System.out.println("writer > started"); writeToSocket(finalSocket); });
+            writer = new Thread(() -> { writeToSocket(finalSocket); });
             writer.setName("writer");
             writer.start();
 
-            reader = new Thread(() -> { System.out.println("reader > started"); readFromSocket(finalSocket); });
+            reader = new Thread(() -> { readFromSocket(finalSocket); });
             reader.setName("reader");
             reader.start();
 
@@ -51,7 +53,8 @@ public class Client {
             for (int nRead = 0; nRead != -1; nRead = in.read(buffer)) {
                 if (nRead == 0) continue;
 
-                System.out.println(new String(buffer, 0, nRead));
+                Message message = gson.fromJson(new String(buffer, 0, nRead), Message.class);
+                System.out.println(String.format("%s> %s", message.getSenderName(), message.getData()));
             }
             socket.shutdownInput();
 
@@ -74,7 +77,11 @@ public class Client {
                     break;
                 }
 
-                out.write(line.getBytes());
+                Date date = new Date();
+                Message message = new Message("", line, date.getTime());
+                String result = gson.toJson(message);
+
+                out.write(result.getBytes());
                 out.flush();
             }
             socket.shutdownOutput();
@@ -85,7 +92,6 @@ public class Client {
             IOUtils.closeQuietly(socket);
         }
     }
-
 
     public static void main(String[] args) throws Exception {
         Client client = new Client("localhost",9000);

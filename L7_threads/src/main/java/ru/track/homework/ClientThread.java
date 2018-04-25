@@ -1,5 +1,6 @@
 package ru.track.homework;
 
+import com.google.gson.Gson;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,6 +25,8 @@ public class ClientThread extends Thread {
     private InputStream in;
     private OutputStream out;
 
+    private static Gson gson = new Gson();
+
     public ClientThread(@NotNull Socket socket, @NotNull List<Message> messages) {
             this.clientID = counterID++;
             this.socket = socket;
@@ -42,10 +45,10 @@ public class ClientThread extends Thread {
             for (int nRead = 0; nRead != -1; nRead = in.read(buffer)) {
                 if (nRead == 0) continue;
 
-                Date date = new Date();
-                Message message = new Message(getName(), new String(buffer, 0, nRead), date.getTime());
+                Message message = gson.fromJson(new String(buffer, 0, nRead), Message.class);
+                message.setSenderName(getName());
                 messages.add(message);
-                System.out.println(String.format("%s > %s", message.getSenderName(), message.getData()));
+                System.out.println(String.format("%s> %s", message.getSenderName(), message.getData()));
             }
 
             socket.shutdownInput();
@@ -54,7 +57,7 @@ public class ClientThread extends Thread {
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
-            System.out.println(String.format("main > client disconnected: %s", getName()));
+            System.out.println(String.format("main> client disconnected: %s", getName()));
             IOUtils.closeQuietly(socket);
         }
     }
@@ -62,10 +65,9 @@ public class ClientThread extends Thread {
     public void send(Message message)
     {
         try {
-            final byte[] buffer = message.getData().getBytes();
-            out.write(buffer);
+            String result = gson.toJson(message);
+            out.write(result.getBytes());
             out.flush();
-
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
