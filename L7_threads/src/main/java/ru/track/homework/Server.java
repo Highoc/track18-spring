@@ -14,22 +14,24 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
 
-//Не пробрасывать id на клиент
-//Корректная работа со списком клиентов
-//Админская консоль
-
 public class Server {
     private final int port;
     private final int backlog;
 
     private List<Message> messages = Collections.synchronizedList(new ArrayList<>());
     private List<ClientThread> clients = Collections.synchronizedList(new ArrayList<>());
-    private Thread broadcasterThread = new Thread(() -> { broadcast(); });
-    private Thread adminConsoleThread = new Thread(() -> { adminConsole(); });
+
+    private BroadcosterThread broadcaster;
+    private AdminThread admin;
+
+    private ConversationService storage = new Database();
 
     public Server(int port, int backlog) {
         this.port = port;
         this.backlog = backlog;
+
+        admin = new AdminThread(clients);
+        broadcaster = new BroadcosterThread(clients, messages);
     }
 
     public void serve() throws IOException {
@@ -38,8 +40,8 @@ public class Server {
             final ServerSocket serverSocketFinal = new ServerSocket(port, backlog, InetAddress.getByName("localhost"));
             serverSocket = serverSocketFinal;
 
-            broadcasterThread.start();
-            adminConsoleThread.start();
+            broadcaster.start();
+            admin.start();
 
             while (true){
                 System.out.println("main> wait to accept new client...");
@@ -55,81 +57,14 @@ public class Server {
         try {
             Socket socket = serverSocket.accept();
 
-            ClientThread client = new ClientThread(socket, messages);
+            ClientThread client = new ClientThread(socket, clients, messages);
+
             clients.add(client);
             client.start();
 
             System.out.println(String.format("main> new client connected: %s", client.getName()));
         } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void broadcast()
-    {
-        BufferedInputStream
-        try {
-            Date date = new Date();
-            long lastUpdateTime = date.getTime();
-
-            while (true) {
-                synchronized (messages) {
-                    for (Message messsage: messages) {
-                        if (messsage.getTimeStand() >= lastUpdateTime)
-                        {
-                            for (ClientThread client: clients) {
-                                if (!client.isAlive()) {
-                                    clients.remove(client);
-                                }
-
-                                if (!client.getName().equals(messsage.getSenderName()))
-                                {
-                                    client.send(messsage);
-                                }
-                            }
-                        }
-                    }
-                    date = new Date();
-                    lastUpdateTime = date.getTime();
-                }
-                Thread.sleep(500);
-            }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void adminConsole()
-    {
-        Scanner scanner = new Scanner(System.in);
-
-        while (true) {
-            String line = scanner.nextLine();
-            if ("exit".equals(line)) {
-                System.out.println("bye!");
-                break;
-            }
-
-            if ("list".equals(line)) {
-                synchronized (clients){
-                    System.out.println("Client list:");
-                    if (clients.isEmpty()) {
-                        System.out.println("empty");
-                    }
-
-                    for (ClientThread client: clients){
-                        if (!client.isAlive()) {
-                            System.out.print("-");
-                            clients.remove(client);
-                        } else {
-                            System.out.print("+");
-                        }
-
-                        System.out.println(client.getName());
-
-                    }
-                }
-            }
+            //throw new RuntimeException(e);
         }
     }
 

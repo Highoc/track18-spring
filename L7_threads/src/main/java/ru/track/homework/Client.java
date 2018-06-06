@@ -8,13 +8,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.util.Date;
 import java.util.Scanner;
 
 public class Client {
-
     private final int port;
     private final String host;
+
+    private String username;
 
     private Thread writer;
     private Thread reader;
@@ -33,15 +33,13 @@ public class Client {
             final Socket finalSocket = socket;
 
             writer = new Thread(() -> { writeToSocket(finalSocket); });
-            writer.setName("writer");
             writer.start();
 
             reader = new Thread(() -> { readFromSocket(finalSocket); });
-            reader.setName("reader");
             reader.start();
 
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            //throw new RuntimeException(e);
         }
     }
 
@@ -54,12 +52,12 @@ public class Client {
                 if (nRead == 0) continue;
 
                 Message message = gson.fromJson(new String(buffer, 0, nRead), Message.class);
-                System.out.println(String.format("%s> %s", message.getSenderName(), message.getData()));
+                System.out.println(String.format("%s> %s", message.getUsername(), message.getText()));
             }
             socket.shutdownInput();
 
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            //throw new RuntimeException(e);
         } finally {
             IOUtils.closeQuietly(socket);
         }
@@ -70,6 +68,11 @@ public class Client {
             final OutputStream out = socket.getOutputStream();
             Scanner scanner = new Scanner(System.in);
 
+            System.out.print("Введите ваш username: ");
+            username = scanner.nextLine();
+
+            out.write(username.getBytes());
+
             while (true) {
                 String line = scanner.nextLine();
                 if ("exit".equals(line)) {
@@ -77,8 +80,7 @@ public class Client {
                     break;
                 }
 
-                Date date = new Date();
-                Message message = new Message("", line, date.getTime());
+                Message message = new Message(username, line);
                 String result = gson.toJson(message);
 
                 out.write(result.getBytes());
@@ -87,7 +89,7 @@ public class Client {
             socket.shutdownOutput();
 
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            //throw new RuntimeException(e);
         } finally {
             IOUtils.closeQuietly(socket);
         }
