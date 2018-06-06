@@ -8,7 +8,7 @@ import java.util.Scanner;
 public class AdminThread extends Thread {
     private List<ClientThread> clients;
 
-    public AdminThread(@NotNull List<ClientThread> clients) {
+    AdminThread(@NotNull List<ClientThread> clients) {
         this.clients = clients;
     }
 
@@ -41,6 +41,7 @@ public class AdminThread extends Thread {
                     for (ClientThread client: clients){
                         if (!client.isInterrupted() && (client.getClientID() == clientId)) {
                             client.interrupt();
+                            break;
                         }
                     }
                 }

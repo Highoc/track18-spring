@@ -2,13 +2,8 @@ package ru.track.homework;
 
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -18,13 +13,12 @@ public class Server {
     private final int port;
     private final int backlog;
 
-    private List<Message> messages = Collections.synchronizedList(new ArrayList<>());
+    private ConversationService messages = new Database();
     private List<ClientThread> clients = Collections.synchronizedList(new ArrayList<>());
 
     private BroadcosterThread broadcaster;
     private AdminThread admin;
 
-    private ConversationService storage = new Database();
 
     public Server(int port, int backlog) {
         this.port = port;

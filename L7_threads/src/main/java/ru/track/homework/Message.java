@@ -7,10 +7,13 @@ class Message {
     private String text;
     private long ts;
 
-    public Message(@NotNull String username, @NotNull String text)
-    {
+    Message(@NotNull String username, @NotNull String text) {
+        this(username, text, System.currentTimeMillis());
+    }
+
+    Message(@NotNull String username, @NotNull String text, long ts) {
         this.username = username;
-        this.ts = System.currentTimeMillis();
+        this.ts = ts;
         this.text = text;
     }
 

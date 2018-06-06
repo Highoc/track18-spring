@@ -21,7 +21,7 @@ public class ClientThread extends Thread {
 
     private static AtomicCounter counter = new AtomicCounter();
 
-    private static List<Message> messages;
+    private static ConversationService messages;
     private static List<ClientThread> clients;
 
     private final Socket socket;
@@ -31,12 +31,12 @@ public class ClientThread extends Thread {
 
     private static Gson gson = new Gson();
 
-    public ClientThread(@NotNull Socket socket, @NotNull List<ClientThread> clients, @NotNull List<Message> messages) {
+    ClientThread(@NotNull Socket socket, @NotNull List<ClientThread> clients, @NotNull ConversationService messages) {
             this.clientID = counter.inc();
             this.socket = socket;
 
-            this.clients = clients;
-            this.messages = messages;
+            ClientThread.clients = clients;
+            ClientThread.messages = messages;
 
             setName(String.format("Client[%d]@%s:%s", clientID, socket.getInetAddress(), socket.getPort()));
     }
@@ -50,20 +50,19 @@ public class ClientThread extends Thread {
 
             int nUsername = in.read(buffer);
             username = new String(buffer, 0, nUsername);
-
             for (int nRead = 0; !isInterrupted() || (nRead != -1); nRead = in.read(buffer)) {
-                while (in.available() == 0) { sleep(200); }
+                //while (in.available() == 0) { sleep(200); }
                 if (nRead == 0) continue;
 
                 Message message = gson.fromJson(new String(buffer, 0, nRead), Message.class);
-                messages.add(message);
                 System.out.println(String.format("%s[%s]> %s", getName(), message.getUsername(), message.getText()));
+                messages.store(message);
             }
 
             socket.shutdownInput();
             socket.shutdownOutput();
 
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) { //| InterruptedException e
             //throw new RuntimeException(e);
         } finally {
             clients.remove(this);
