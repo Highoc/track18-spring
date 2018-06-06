@@ -27,6 +27,9 @@ public final class TaskImplementation implements FileEncoder {
         final File fin = new File(finPath);
         final File fout;
 
+        //Должно быть кратно 3
+        final int BUFFER_SIZE = 1023;
+
         if (foutPath != null) {
             fout = new File(foutPath);
         } else {
@@ -34,42 +37,34 @@ public final class TaskImplementation implements FileEncoder {
             fout.deleteOnExit();
         }
 
-        try (
-            final InputStream is = new FileInputStream(fin);
-            final OutputStream os = new BufferedOutputStream(new FileOutputStream(fout));
-        ) {
-            //Должно быть кратно 3
-            final int bufferSize = 1023;
+        try (final BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(fout), BUFFER_SIZE);
+             final BufferedInputStream bis = new BufferedInputStream(new FileInputStream(fin), BUFFER_SIZE * 4 / 3))
+        {
+            byte[] buffer = new byte[3];
+            int countWords = bis.read(buffer, 0, 3);
 
-            byte[] bytesIn = new byte[bufferSize];
-            byte[] bytesOut = new byte[bufferSize/3*4];
+            for (; countWords != -1; countWords = bis.read(buffer, 0, 3)) {
+                bos.write((byte) toBase64[((buffer[0] & 0b11111100) >> 2)]);
+                bos.write((byte) toBase64[(((buffer[0] & 0b00000011) << 4)) | ((buffer[1] & 0b11110000) >>> 4)]);
 
-            int readBytes = 0, addBytes = 0;
-            while((readBytes = is.read(bytesIn, 0, bufferSize)) != -1) {
-                //Граничный случай, когда надо дополнить нулевыми байтами (до количества, кратного 3)
-                addBytes = (3 - readBytes%3)%3;
-                for (int i = 0; i < addBytes; i++) {
-                    bytesIn[readBytes++] = 0x00;
+                if (countWords == 1) {
+                    bos.write('=');
+                    bos.write('=');
+                } else if (countWords == 2) {
+                    bos.write((byte) toBase64[(((buffer[1] & 0b00001111) << 2) | ((buffer[2] & 0b11000000) >>> 6))]);
+                    bos.write('=');
+                } else {
+                    bos.write((byte) toBase64[(((buffer[1] & 0b00001111) << 2) | ((buffer[2] & 0b11000000) >>> 6))]);
+                    bos.write((byte) toBase64[buffer[2] & 0b00111111]);
                 }
 
-                for (int i = 0; i < readBytes/3; i++) {
-                    bytesOut[4*i]     = (byte) toBase64[(bytesIn[3*i] & 0xFC) >> 2];
-                    bytesOut[4*i + 1] = (byte) toBase64[((bytesIn[3*i] & 0x03) << 4) | ((bytesIn[3*i + 1] & 0xF0) >>> 4 )];
-                    bytesOut[4*i + 2] = (byte) toBase64[((bytesIn[3*i + 1] & 0x0F) << 2) | ((bytesIn[3*i + 2] & 0xC0) >>> 6 )];
-                    bytesOut[4*i + 3] = (byte) toBase64[(bytesIn[3*i + 2] & 0x3F)];
-                }
-
-                if (addBytes == 2)
-                {
-                    bytesOut[readBytes/3*4 - 1] = (byte) '=';
-                    bytesOut[readBytes/3*4 - 2] = (byte) '=';
-                } else if (addBytes == 1)
-                {
-                    bytesOut[readBytes/3*4 - 1] = (byte) '=';
-                }
-
-                os.write(bytesOut, 0, readBytes/3*4);
+                buffer[0] = 0;
+                buffer[1] = 0;
+                buffer[2] = 0;
             }
+            bos.flush();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
         }
 
         return fout;
